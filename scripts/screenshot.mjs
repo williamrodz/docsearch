@@ -7,24 +7,28 @@ async function takeScreenshots() {
   // Set viewport for desktop
   await page.setViewport({ width: 1280, height: 800 });
 
-  console.log('Taking screenshot of home page...');
-  await page.goto('http://localhost:3000', { waitUntil: 'networkidle0' });
+  console.log('1. Taking screenshot of home page...');
+  await page.goto('http://localhost:3000', { waitUntil: 'networkidle0', timeout: 30000 });
   await page.screenshot({ path: 'screenshots/01-home.png', fullPage: true });
 
-  console.log('Taking screenshot of new group page...');
-  await page.goto('http://localhost:3000/groups/new', { waitUntil: 'networkidle0' });
+  console.log('2. Taking screenshot of new group page...');
+  await page.goto('http://localhost:3000/groups/new', { waitUntil: 'networkidle0', timeout: 30000 });
   await page.screenshot({ path: 'screenshots/02-new-group.png', fullPage: true });
 
-  // Test user switcher
-  console.log('Testing user switcher...');
-  await page.goto('http://localhost:3000', { waitUntil: 'networkidle0' });
+  // Create a user first
+  console.log('3. Creating a test user...');
+  await page.goto('http://localhost:3000', { waitUntil: 'networkidle0', timeout: 30000 });
 
-  // Click user switcher button
-  const userButton = await page.$('button:has-text("Select User"), button:has-text("Loading")');
+  // Click user dropdown
+  const userButton = await page.waitForSelector('button:has(svg)', { timeout: 5000 });
   if (userButton) {
-    await userButton.click();
-    await page.waitForTimeout(500);
-    await page.screenshot({ path: 'screenshots/03-user-dropdown.png', fullPage: true });
+    // Find the user switcher button (last button in header)
+    const buttons = await page.$$('header button');
+    if (buttons.length > 0) {
+      await buttons[buttons.length - 1].click();
+      await new Promise(r => setTimeout(r, 500));
+      await page.screenshot({ path: 'screenshots/03-user-menu.png' });
+    }
   }
 
   await browser.close();
