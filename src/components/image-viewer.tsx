@@ -297,22 +297,37 @@ export function ImageViewer({
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
-            {/* Status */}
+            {/* Status and Confidence */}
             <div>
               <h4 className="text-sm font-medium text-muted-foreground mb-2">
                 Status
               </h4>
-              <Badge
-                variant={
-                  image.processing_status === "completed"
-                    ? "success"
-                    : image.processing_status === "failed"
-                    ? "destructive"
-                    : "secondary"
-                }
-              >
-                {image.processing_status}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant={
+                    image.processing_status === "completed"
+                      ? "success"
+                      : image.processing_status === "failed"
+                      ? "destructive"
+                      : "secondary"
+                  }
+                >
+                  {image.processing_status}
+                </Badge>
+                {image.confidence_score !== null && image.confidence_score !== undefined && (
+                  <Badge
+                    variant={
+                      image.confidence_score >= 0.8
+                        ? "success"
+                        : image.confidence_score >= 0.5
+                        ? "warning"
+                        : "destructive"
+                    }
+                  >
+                    {Math.round(image.confidence_score * 100)}% confidence
+                  </Badge>
+                )}
+              </div>
             </div>
 
             {/* Inspection status */}
@@ -336,9 +351,37 @@ export function ImageViewer({
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">
                   Transcribed Text
                 </h4>
-                <p className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-lg max-h-48 overflow-y-auto">
-                  {image.raw_text}
-                </p>
+                <div className="text-sm whitespace-pre-wrap bg-muted p-3 rounded-lg max-h-64 overflow-y-auto font-serif leading-relaxed">
+                  {image.raw_text.split(/(\[.*?\])/).map((part, i) => {
+                    // Highlight uncertain text [?word?] in yellow
+                    if (part.startsWith("[?") && part.endsWith("?]")) {
+                      return (
+                        <span key={i} className="bg-yellow-200 dark:bg-yellow-900 px-0.5 rounded" title="Uncertain reading">
+                          {part}
+                        </span>
+                      )
+                    }
+                    // Highlight illegible sections [...] in red
+                    if (part === "[...]") {
+                      return (
+                        <span key={i} className="bg-red-200 dark:bg-red-900 px-0.5 rounded" title="Illegible section">
+                          {part}
+                        </span>
+                      )
+                    }
+                    return <span key={i}>{part}</span>
+                  })}
+                </div>
+                <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-yellow-200 dark:bg-yellow-900 rounded" />
+                    Uncertain
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-3 h-3 bg-red-200 dark:bg-red-900 rounded" />
+                    Illegible
+                  </span>
+                </div>
               </div>
             )}
 
@@ -348,17 +391,35 @@ export function ImageViewer({
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">
                   People Mentioned ({image.people.length})
                 </h4>
-                <div className="flex flex-wrap gap-2">
-                  {image.people.map((person) => (
-                    <Badge key={person.id} variant="outline">
-                      {person.name}
-                      {person.role && (
-                        <span className="text-muted-foreground ml-1">
-                          ({person.role})
-                        </span>
-                      )}
-                    </Badge>
-                  ))}
+                <div className="space-y-2">
+                  {image.people.map((person) => {
+                    const confidence = person.confidence || 0.5
+                    const borderColor =
+                      confidence >= 0.8
+                        ? "border-green-500"
+                        : confidence >= 0.5
+                        ? "border-yellow-500"
+                        : "border-red-500"
+
+                    return (
+                      <div
+                        key={person.id}
+                        className={`p-2 rounded border-l-4 ${borderColor} bg-muted/50`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm">{person.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {Math.round(confidence * 100)}%
+                          </span>
+                        </div>
+                        {person.role && (
+                          <span className="text-xs text-muted-foreground capitalize">
+                            {person.role}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -369,14 +430,34 @@ export function ImageViewer({
                 <h4 className="text-sm font-medium text-muted-foreground mb-2">
                   Event Date
                 </h4>
-                <p className="text-sm">
-                  {new Date(image.event_date).toLocaleDateString()}
-                  {image.event_date_raw && (
-                    <span className="text-muted-foreground ml-2">
-                      ({image.event_date_raw})
-                    </span>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm">
+                    {new Date(image.event_date).toLocaleDateString("es-ES", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                  {image.event_date_confidence !== null && image.event_date_confidence !== undefined && (
+                    <Badge
+                      variant={
+                        image.event_date_confidence >= 0.8
+                          ? "success"
+                          : image.event_date_confidence >= 0.5
+                          ? "warning"
+                          : "destructive"
+                      }
+                      className="text-xs"
+                    >
+                      {Math.round(image.event_date_confidence * 100)}%
+                    </Badge>
                   )}
-                </p>
+                </div>
+                {image.event_date_raw && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Original: &quot;{image.event_date_raw}&quot;
+                  </p>
+                )}
               </div>
             )}
           </div>

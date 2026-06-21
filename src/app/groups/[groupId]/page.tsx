@@ -1,12 +1,11 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Upload, Images, Users, Calendar, Search } from "lucide-react"
+import { ArrowLeft, Upload, Images, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { ImageGrid } from "@/components/image-grid"
 import { GroupTabs } from "@/components/group-tabs"
+import { ProcessingPanel } from "@/components/processing-panel"
 
 interface GroupPageProps {
   params: Promise<{ groupId: string }>
@@ -62,6 +61,23 @@ export default async function GroupPage({ params }: GroupPageProps) {
   const pendingImages = imagesWithUrls.filter(
     (img) => img.processing_status === "pending"
   ).length
+  const failedImages = imagesWithUrls.filter(
+    (img) => img.processing_status === "failed"
+  ).length
+
+  // Count unique people
+  const { count: peopleCount } = await supabase
+    .from("people")
+    .select("*", { count: "exact", head: true })
+    .in("image_id", imagesWithUrls.map((img) => img.id))
+
+  const processingStatus = {
+    total: totalImages,
+    pending: pendingImages,
+    processing: 0,
+    completed: processedImages,
+    failed: failedImages,
+  }
 
   return (
     <div className="container py-8">
@@ -100,33 +116,41 @@ export default async function GroupPage({ params }: GroupPageProps) {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div className="bg-card rounded-lg border p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <Images className="h-4 w-4" />
-            <span className="text-sm">Total Images</span>
+      {/* Stats and Processing */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Stats cards */}
+        <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              <Images className="h-4 w-4" />
+              <span className="text-sm">Total</span>
+            </div>
+            <p className="text-2xl font-bold">{totalImages}</p>
           </div>
-          <p className="text-2xl font-bold">{totalImages}</p>
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              <span className="text-sm">Processed</span>
+            </div>
+            <p className="text-2xl font-bold text-green-600">{processedImages}</p>
+          </div>
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              <span className="text-sm">Pending</span>
+            </div>
+            <p className="text-2xl font-bold text-yellow-600">{pendingImages}</p>
+          </div>
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              <Users className="h-4 w-4" />
+              <span className="text-sm">People</span>
+            </div>
+            <p className="text-2xl font-bold">{peopleCount || 0}</p>
+          </div>
         </div>
-        <div className="bg-card rounded-lg border p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <span className="text-sm">Processed</span>
-          </div>
-          <p className="text-2xl font-bold text-green-600">{processedImages}</p>
-        </div>
-        <div className="bg-card rounded-lg border p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <span className="text-sm">Pending</span>
-          </div>
-          <p className="text-2xl font-bold text-yellow-600">{pendingImages}</p>
-        </div>
-        <div className="bg-card rounded-lg border p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <Users className="h-4 w-4" />
-            <span className="text-sm">People Found</span>
-          </div>
-          <p className="text-2xl font-bold">0</p>
+
+        {/* Processing panel */}
+        <div className="lg:col-span-1">
+          <ProcessingPanel groupId={groupId} initialStatus={processingStatus} />
         </div>
       </div>
 
