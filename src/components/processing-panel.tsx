@@ -91,12 +91,13 @@ export function ProcessingPanel({ groupId, initialStatus }: ProcessingPanelProps
           const job = await response.json()
           setActiveJob(job)
 
+          await refreshStatus()
+
           if (job.status === "completed" || job.status === "failed" || job.status === "cancelled") {
             if (pollingRef.current) {
               clearInterval(pollingRef.current)
               pollingRef.current = null
             }
-            await refreshStatus()
           }
         }
       } catch (err) {
@@ -135,14 +136,7 @@ export function ProcessingPanel({ groupId, initialStatus }: ProcessingPanelProps
 
       setActiveJob(createResult)
 
-      // Trigger the first batch
-      fetch(`/api/jobs/${createResult.id}/process`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      }).catch((err) => {
-        console.error("Failed to trigger first batch:", err)
-      })
-
+      // Worker on the server will pick up the job automatically.
       // Start polling for progress
       startPolling(createResult.id)
     } catch (err) {
