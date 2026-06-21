@@ -96,7 +96,7 @@ export async function analyzeDocument(imageUrl: string): Promise<ExtractionResul
     : "image/jpeg"
 
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-latest",
     max_tokens: 4096,
     messages: [
       {
