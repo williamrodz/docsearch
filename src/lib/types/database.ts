@@ -214,6 +214,56 @@ export interface Database {
           updated_at?: string
         }
       }
+      processing_jobs: {
+        Row: {
+          id: string
+          group_id: string
+          created_by: string | null
+          status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
+          retry_failed: boolean
+          total_images: number
+          processed_count: number
+          failed_count: number
+          batch_size: number
+          started_at: string | null
+          completed_at: string | null
+          last_activity_at: string | null
+          error_message: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          created_by?: string | null
+          status?: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
+          retry_failed?: boolean
+          total_images?: number
+          processed_count?: number
+          failed_count?: number
+          batch_size?: number
+          started_at?: string | null
+          completed_at?: string | null
+          last_activity_at?: string | null
+          error_message?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          created_by?: string | null
+          status?: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
+          retry_failed?: boolean
+          total_images?: number
+          processed_count?: number
+          failed_count?: number
+          batch_size?: number
+          started_at?: string | null
+          completed_at?: string | null
+          last_activity_at?: string | null
+          error_message?: string | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -235,6 +285,7 @@ export type Person = Database['public']['Tables']['people']['Row']
 export type CanonicalPerson = Database['public']['Tables']['canonical_people']['Row']
 export type Inspection = Database['public']['Tables']['inspections']['Row']
 export type UserGroupPosition = Database['public']['Tables']['user_group_position']['Row']
+export type ProcessingJob = Database['public']['Tables']['processing_jobs']['Row']
 
 // Insert types
 export type UserInsert = Database['public']['Tables']['users']['Insert']

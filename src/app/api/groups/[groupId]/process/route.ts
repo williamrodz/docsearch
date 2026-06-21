@@ -11,7 +11,7 @@ export async function POST(
   try {
     const { groupId } = await params
     const body = await request.json()
-    const { batch_size = 20, image_ids } = body
+    const { batch_size = 20, image_ids, retry_failed = false } = body
 
     // Validate batch size
     const batchSize = Math.max(1, Math.min(50, batch_size))
@@ -23,7 +23,7 @@ export async function POST(
       .from("images")
       .select("*")
       .eq("group_id", groupId)
-      .eq("processing_status", "pending")
+      .eq("processing_status", retry_failed ? "failed" : "pending")
       .order("sort_order", { ascending: true })
       .limit(batchSize)
 
